@@ -1,0 +1,6 @@
+{
+  "name": "فروشگاه تخصصی آیلند باتری | Island Battery",
+  "description": "فروشگاه تخصصی باتری و لوازم جانبی اورجینال موبایل آیلند باتری با استانداردهای ووکامرس، سازگار با ترب و درگاه پرداخت ایرانی",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}

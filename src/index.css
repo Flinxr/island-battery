@@ -1,0 +1,86 @@
+@import "tailwindcss";
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+@layer base {
+  :root {
+    --font-vazir: 'Vazirmatn', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  }
+
+  body {
+    font-family: var(--font-vazir);
+    direction: rtl;
+    text-align: right;
+  }
+
+  button, input, select, textarea {
+    font-family: inherit;
+  }
+}
+
+/* Complete removal of default browser scrollbars while preserving scrolling */
+*, *::before, *::after {
+  scrollbar-width: none !important;
+  -ms-overflow-style: none !important;
+}
+
+::-webkit-scrollbar,
+*::-webkit-scrollbar {
+  display: none !important;
+  width: 0px !important;
+  height: 0px !important;
+  background: transparent !important;
+}
+
+html {
+  overflow-x: hidden;
+  max-width: 100vw;
+  scroll-behavior: smooth;
+}
+
+body {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+  position: relative;
+  -webkit-overflow-scrolling: touch;
+}
+
+#root {
+  overflow-x: hidden;
+  max-width: 100vw;
+  width: 100%;
+}
+
+/* Dynamic Gradients - Soft light blue to deep navy, never flat solid */
+.bg-sky-gradient {
+  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+}
+
+.bg-blue-gradient {
+  background: linear-gradient(135deg, #0284c7 0%, #1e40af 100%);
+}
+
+.bg-hero-gradient {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 40%, #0f172a 100%);
+}
+
+.bg-light-blue-gradient {
+  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+}
+
+.bg-soft-blue-subtle {
+  background: linear-gradient(135deg, rgba(224, 242, 254, 0.8) 0%, rgba(186, 230, 253, 0.5) 100%);
+}
+
+.bg-dark-light-blue-gradient {
+  background: linear-gradient(135deg, #0284c7 0%, #0369a1 60%, #075985 100%);
+}
+
+/* Card hover smooth transitions */
+.product-card-hover {
+  transition: transform 0.25s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+.product-card-hover:hover {
+  transform: translateY(-4px);
+}
