@@ -52,29 +52,197 @@ body {
   width: 100%;
 }
 
-/* Dynamic Gradients - Soft light blue to deep navy, never flat solid */
+/* Dynamic Theme Palettes (Calibrated so colors stay elegant and not flat) */
+:root, [data-theme="sky"] {
+  --color-primary-50: #f0f9ff;
+  --color-primary-100: #e0f2fe;
+  --color-primary-200: #bae6fd;
+  --color-primary-300: #7dd3fc;
+  --color-primary-400: #38bdf8;
+  --color-primary-500: #0ea5e9;
+  --color-primary-600: #0284c7;
+  --color-primary-700: #0369a1;
+  --color-primary-800: #075985;
+  --color-primary-900: #0c4a6e;
+  --theme-gradient: linear-gradient(135deg, #0ea5e9 0%, #2563eb 50%, #4f46e5 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #0284c7 0%, #0369a1 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+  --theme-badge-bg: #e0f2fe;
+  --theme-badge-text: #0369a1;
+}
+
+[data-theme="purple"] {
+  --color-primary-50: #faf5ff;
+  --color-primary-100: #f3e8ff;
+  --color-primary-200: #e9d5ff;
+  --color-primary-300: #d8b4fe;
+  --color-primary-400: #c084fc;
+  --color-primary-500: #a855f7;
+  --color-primary-600: #9333ea;
+  --color-primary-700: #7e22ce;
+  --color-primary-800: #6b21a8;
+  --color-primary-900: #581c87;
+  --theme-gradient: linear-gradient(135deg, #a855f7 0%, #7c3aed 50%, #6366f1 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #7e22ce 0%, #581c87 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #faf5ff 0%, #f3e8ff 50%, #e9d5ff 100%);
+  --theme-badge-bg: #f3e8ff;
+  --theme-badge-text: #6b21a8;
+}
+
+[data-theme="rose"] {
+  --color-primary-50: #fff1f2;
+  --color-primary-100: #ffe4e6;
+  --color-primary-200: #fecdd3;
+  --color-primary-300: #fda4af;
+  --color-primary-400: #fb7185;
+  --color-primary-500: #f43f5e;
+  --color-primary-600: #e11d48;
+  --color-primary-700: #be123c;
+  --color-primary-800: #9f1239;
+  --color-primary-900: #881337;
+  --theme-gradient: linear-gradient(135deg, #f43f5e 0%, #e11d48 50%, #9f1239 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #be123c 0%, #881337 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #fff1f2 0%, #ffe4e6 50%, #fecdd3 100%);
+  --theme-badge-bg: #ffe4e6;
+  --theme-badge-text: #9f1239;
+}
+
+[data-theme="emerald"] {
+  --color-primary-50: #ecfdf5;
+  --color-primary-100: #d1fae5;
+  --color-primary-200: #a7f3d0;
+  --color-primary-300: #6ee7b7;
+  --color-primary-400: #34d399;
+  --color-primary-500: #10b981;
+  --color-primary-600: #059669;
+  --color-primary-700: #047857;
+  --color-primary-800: #065f46;
+  --color-primary-900: #064e3b;
+  --theme-gradient: linear-gradient(135deg, #10b981 0%, #059669 50%, #0f766e 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #059669 0%, #064e3b 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #ecfdf5 0%, #d1fae5 50%, #a7f3d0 100%);
+  --theme-badge-bg: #d1fae5;
+  --theme-badge-text: #065f46;
+}
+
+[data-theme="amber"] {
+  --color-primary-50: #fffbeb;
+  --color-primary-100: #fef3c7;
+  --color-primary-200: #fde68a;
+  --color-primary-300: #fcd34d;
+  --color-primary-400: #fbbf24;
+  --color-primary-500: #f59e0b;
+  --color-primary-600: #d97706;
+  --color-primary-700: #b45309;
+  --color-primary-800: #92400e;
+  --color-primary-900: #78350f;
+  --theme-gradient: linear-gradient(135deg, #f59e0b 0%, #ea580c 50%, #c2410c 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #d97706 0%, #78350f 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #fffbeb 0%, #fef3c7 50%, #fde68a 100%);
+  --theme-badge-bg: #fef3c7;
+  --theme-badge-text: #92400e;
+}
+
+[data-theme="cyan"] {
+  --color-primary-50: #ecfeff;
+  --color-primary-100: #cffafe;
+  --color-primary-200: #a5f3fc;
+  --color-primary-300: #67e8f9;
+  --color-primary-400: #22d3ee;
+  --color-primary-500: #06b6d4;
+  --color-primary-600: #0891b2;
+  --color-primary-700: #0e7490;
+  --color-primary-800: #155e75;
+  --color-primary-900: #164e63;
+  --theme-gradient: linear-gradient(135deg, #06b6d4 0%, #0284c7 50%, #1e3a8a 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #0891b2 0%, #164e63 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #ecfeff 0%, #cffafe 50%, #a5f3fc 100%);
+  --theme-badge-bg: #cffafe;
+  --theme-badge-text: #155e75;
+}
+
+[data-theme="ruby"] {
+  --color-primary-50: #fef2f2;
+  --color-primary-100: #fee2e2;
+  --color-primary-200: #fecaca;
+  --color-primary-300: #fca5a5;
+  --color-primary-400: #f87171;
+  --color-primary-500: #ef4444;
+  --color-primary-600: #dc2626;
+  --color-primary-700: #b91c1c;
+  --color-primary-800: #991b1b;
+  --color-primary-900: #7f1d1d;
+  --theme-gradient: linear-gradient(135deg, #ef4444 0%, #dc2626 50%, #991b1b 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #dc2626 0%, #7f1d1d 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #fef2f2 0%, #fee2e2 50%, #fecaca 100%);
+  --theme-badge-bg: #fee2e2;
+  --theme-badge-text: #991b1b;
+}
+
+[data-theme="indigo"] {
+  --color-primary-50: #eef2ff;
+  --color-primary-100: #e0e7ff;
+  --color-primary-200: #c7d2fe;
+  --color-primary-300: #a5b4fc;
+  --color-primary-400: #818cf8;
+  --color-primary-500: #6366f1;
+  --color-primary-600: #4f46e5;
+  --color-primary-700: #4338ca;
+  --color-primary-800: #3730a3;
+  --color-primary-900: #312e81;
+  --theme-gradient: linear-gradient(135deg, #6366f1 0%, #4f46e5 50%, #3730a3 100%);
+  --theme-hero-gradient: linear-gradient(135deg, #4f46e5 0%, #312e81 40%, #0f172a 100%);
+  --theme-soft-gradient: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 50%, #c7d2fe 100%);
+  --theme-badge-bg: #e0e7ff;
+  --theme-badge-text: #3730a3;
+}
+
+/* Map dynamic primary colors to Tailwind sky-* utilities so theme changes take effect sitewide */
+:root, [data-theme] {
+  --color-sky-50: var(--color-primary-50);
+  --color-sky-100: var(--color-primary-100);
+  --color-sky-200: var(--color-primary-200);
+  --color-sky-300: var(--color-primary-300);
+  --color-sky-400: var(--color-primary-400);
+  --color-sky-500: var(--color-primary-500);
+  --color-sky-600: var(--color-primary-600);
+  --color-sky-700: var(--color-primary-700);
+  --color-sky-800: var(--color-primary-800);
+  --color-sky-900: var(--color-primary-900);
+}
+
+/* Gradients mapped to CSS variables for dynamic manager theming */
 .bg-sky-gradient {
-  background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+  background: var(--theme-gradient);
 }
 
 .bg-blue-gradient {
-  background: linear-gradient(135deg, #0284c7 0%, #1e40af 100%);
+  background: var(--theme-gradient);
 }
 
 .bg-hero-gradient {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 40%, #0f172a 100%);
+  background: var(--theme-hero-gradient);
 }
 
 .bg-light-blue-gradient {
-  background: linear-gradient(135deg, #f0f9ff 0%, #e0f2fe 50%, #bae6fd 100%);
+  background: var(--theme-soft-gradient);
 }
 
-.bg-soft-blue-subtle {
-  background: linear-gradient(135deg, rgba(224, 242, 254, 0.8) 0%, rgba(186, 230, 253, 0.5) 100%);
+.bg-theme-btn {
+  background: var(--theme-gradient);
 }
 
-.bg-dark-light-blue-gradient {
-  background: linear-gradient(135deg, #0284c7 0%, #0369a1 60%, #075985 100%);
+.text-theme-primary {
+  color: var(--color-primary-600);
+}
+
+.dark .text-theme-primary {
+  color: var(--color-primary-400);
+}
+
+.bg-theme-badge {
+  background-color: var(--theme-badge-bg);
+  color: var(--theme-badge-text);
 }
 
 /* Card hover smooth transitions */

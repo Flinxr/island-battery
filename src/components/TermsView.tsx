@@ -34,7 +34,7 @@ export function TermsView() {
 
       <div className="bg-white dark:bg-gray-800 rounded-3xl p-5 sm:p-8 border border-gray-150 dark:border-gray-700/80 shadow-xs space-y-6 text-xs sm:text-sm text-gray-700 dark:text-gray-300 leading-relaxed">
         {/* Section 1 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۱
@@ -47,7 +47,7 @@ export function TermsView() {
         </section>
 
         {/* Section 2 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۲
@@ -68,7 +68,7 @@ export function TermsView() {
         </section>
 
         {/* Section 3 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۳
@@ -84,7 +84,7 @@ export function TermsView() {
         </section>
 
         {/* Section 4 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۴
@@ -100,7 +100,7 @@ export function TermsView() {
         </section>
 
         {/* Section 5 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۵
@@ -116,7 +116,7 @@ export function TermsView() {
         </section>
 
         {/* Section 6 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۶
@@ -154,7 +154,7 @@ export function TermsView() {
         </section>
 
         {/* Section 8 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۸
@@ -173,7 +173,7 @@ export function TermsView() {
         </section>
 
         {/* Section 9 */}
-        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-150 dark:border-slate-800 space-y-2">
+        <section className="p-4 sm:p-5 rounded-2xl bg-slate-50/80 dark:bg-slate-900/50 border border-slate-200 dark:border-slate-800 space-y-2">
           <div className="flex items-center gap-2.5 text-sky-700 dark:text-sky-400 font-bold text-sm sm:text-base">
             <span className="w-7 h-7 rounded-xl bg-sky-100 dark:bg-sky-900/60 text-sky-700 dark:text-sky-300 flex items-center justify-center font-black text-xs">
               ۹

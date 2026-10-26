@@ -6,9 +6,9 @@ export function Footer() {
   const { navigateTo, settings } = useStore();
 
   return (
-    <footer className="w-full bg-white dark:bg-slate-900 border-t border-sky-100 dark:border-slate-800 mt-8 py-5 transition-colors">
+    <footer className="w-full lg:w-[calc(100%-16rem)] xl:w-[calc(100%-18rem)] lg:mr-64 xl:mr-72 bg-white dark:bg-slate-900 border-t border-sky-100 dark:border-slate-800 mt-8 py-5 transition-colors">
       <div className="max-w-7xl mx-auto px-3 sm:px-6 space-y-4">
-        {/* 5 Trust Badges - Guaranteed Single Row on all devices including mobile */}
+        {/* 5 Trust Badges - Guaranteed Single Row on all devices including mobile & tablet */}
         <div className="grid grid-cols-5 items-start justify-items-center gap-1 sm:gap-4 py-2 w-full">
           {/* 1. ارسال فوری */}
           <div className="flex flex-col items-center text-center group cursor-default w-full">
@@ -64,9 +64,10 @@ export function Footer() {
         {/* Minimal Divider */}
         <div className="border-t border-sky-100/70 dark:border-slate-800" />
 
-        {/* Compact Links & Copyright Row */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-2.5 text-xs text-slate-500 dark:text-slate-400">
-          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1 font-semibold text-slate-600 dark:text-slate-300">
+        {/* Consistent 2-Row Footer Layout for ALL screen sizes (Mobile, Tablet, Desktop) */}
+        <div className="flex flex-col items-center justify-center gap-2.5 text-center text-xs text-slate-500 dark:text-slate-400 py-1 w-full">
+          {/* Row 1: Quick Navigation Links */}
+          <div className="flex flex-wrap items-center justify-center gap-x-4 gap-y-1.5 font-bold text-slate-600 dark:text-slate-300">
             <button onClick={() => navigateTo('home')} className="hover:text-sky-600 transition-colors cursor-pointer">
               خانه
             </button>
@@ -87,7 +88,8 @@ export function Footer() {
             </button>
           </div>
 
-          <p className="text-[11px] text-slate-400 dark:text-slate-500">
+          {/* Row 2: Copyright Text */}
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 font-medium">
             © 2026 {settings.storeName || 'آیلند باتری'} | island battery. تمام حقوق محفوظ است.
           </p>
         </div>
@@ -95,3 +97,4 @@ export function Footer() {
     </footer>
   );
 }
+

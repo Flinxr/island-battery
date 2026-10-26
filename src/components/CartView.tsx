@@ -30,7 +30,7 @@ export function CartView({ onProceedToCheckout }: CartViewProps) {
                 return (
                   <div
                     key={item.id}
-                    className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-slate-150 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 transition-all"
+                    className="bg-white dark:bg-gray-800 rounded-2xl p-4 sm:p-5 border border-slate-200 dark:border-slate-700/80 shadow-xs flex flex-col sm:flex-row items-center justify-between gap-4 transition-all"
                   >
                     <div className="flex items-center gap-4 w-full sm:w-auto">
                       <div className="w-20 h-20 rounded-xl bg-slate-50 dark:bg-slate-800 p-2 shrink-0 flex items-center justify-center border border-slate-100 dark:border-slate-700">

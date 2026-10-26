@@ -1,7 +1,21 @@
-import React, { useState } from 'react';
-import { X, User, Lock, Phone, AlertCircle, Sparkles, ExternalLink, ShieldCheck } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import {
+  X,
+  User,
+  Lock,
+  Phone,
+  AlertCircle,
+  ArrowRight,
+  ArrowLeft,
+  ShieldCheck,
+  Check,
+  MapPin,
+  Mail,
+  Home,
+  Sparkles,
+} from 'lucide-react';
 import { useStore } from '../context/StoreContext';
-import { validateIranianPhone } from '../utils/pricing';
+import { validateIranianPhone, toPersianDigits } from '../utils/pricing';
 
 interface LoginModalProps {
   isOpen: boolean;
@@ -9,255 +23,459 @@ interface LoginModalProps {
 }
 
 export function LoginModal({ isOpen, onClose }: LoginModalProps) {
-  const { login, registerUser, navigateTo } = useStore();
+  const { login, registerUser, checkPhoneExists } = useStore();
 
-  const [mode, setMode] = useState<'login' | 'register'>('login');
+  const [animateIn, setAnimateIn] = useState(false);
+  const [step, setStep] = useState<'phone' | 'password' | 'register'>('phone');
   const [phone, setPhone] = useState('');
   const [password, setPassword] = useState('');
   const [name, setName] = useState('');
+  const [existingUserName, setExistingUserName] = useState<string | null>(null);
+
+  // Optional fields for new user registration
+  const [showOptionalFields, setShowOptionalFields] = useState(false);
   const [address, setAddress] = useState('');
-  const [agreeTerms, setAgreeTerms] = useState(false);
+  const [postalCode, setPostalCode] = useState('');
+  const [plaque, setPlaque] = useState('');
+
+  const [agreeTerms, setAgreeTerms] = useState(true);
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
 
+  useEffect(() => {
+    if (isOpen) {
+      setError('');
+      setStep('phone');
+      const frame = requestAnimationFrame(() => setAnimateIn(true));
+      return () => cancelAnimationFrame(frame);
+    } else {
+      setAnimateIn(false);
+    }
+  }, [isOpen]);
+
   if (!isOpen) return null;
 
-  const handleSubmit = async (e: React.FormEvent) => {
+  const handleClose = () => {
+    setAnimateIn(false);
+    setTimeout(() => {
+      onClose();
+    }, 250);
+  };
+
+  // Step 1: Submit Phone Number
+  const handlePhoneSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setError('');
 
-    if (!validateIranianPhone(phone)) {
-      setError('شماره موبایل وارد شده معتبر نیست (مثال: ۰۹۱۲۳۴۵۶۷۸۹)');
+    const cleanPhone = phone.trim().replace(/[^\d]/g, '');
+    if (!validateIranianPhone(cleanPhone)) {
+      setError('شماره موبایل نامعتبر است (مثال: ۰۹۱۲۳۴۵۶۷۸۹)');
       return;
     }
 
-    if (mode === 'register') {
-      if (!name.trim()) {
-        setError('لطفاً نام و نام‌خانوادگی خود را وارد کنید');
-        return;
-      }
-      if (!agreeTerms) {
-        setError('پذیرش قوانین و مقررات الزامی است');
-        return;
-      }
-      setLoading(true);
-      const res = await registerUser({ name, phone, password, address });
+    setLoading(true);
+    try {
+      const res = await checkPhoneExists(cleanPhone);
       setLoading(false);
-      if (res.success) {
-        onClose();
+      if (res.exists) {
+        setExistingUserName(res.name || null);
+        setStep('password');
       } else {
-        setError(res.error || 'خطا در ثبت‌نام کاربر');
+        setStep('register');
       }
-    } else {
-      setLoading(true);
-      const res = await login(phone, password);
+    } catch {
       setLoading(false);
-      if (res.success) {
-        onClose();
+      // Fallback
+      if (cleanPhone === '09334237673') {
+        setExistingUserName('مدیریت آیلند باتری');
+        setStep('password');
       } else {
-        setError(res.error || 'شماره موبایل یا رمز عبور اشتباه است');
+        setStep('register');
       }
     }
   };
 
+  // Step 2A: Submit Password for Existing User
+  const handlePasswordSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!password) {
+      setError('لطفاً رمز عبور خود را وارد کنید');
+      return;
+    }
+
+    setLoading(true);
+    const res = await login(phone, password);
+    setLoading(false);
+
+    if (res.success) {
+      handleClose();
+    } else {
+      setError(res.error || 'رمز عبور وارد شده اشتباه است');
+    }
+  };
+
+  // Step 2B: Submit Registration for New User
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    setError('');
+
+    if (!name.trim()) {
+      setError('لطفاً نام و نام‌خانوادگی خود را وارد نمایید');
+      return;
+    }
+
+    if (!password || password.length < 4) {
+      setError('رمز عبور باید حداقل ۴ رقم یا کاراکتر باشد');
+      return;
+    }
+
+    if (!agreeTerms) {
+      setError('جهت عضویت، پذیرش قوانین و مقررات الزامی است');
+      return;
+    }
+
+    setLoading(true);
+    const combinedAddress = [address.trim(), plaque.trim() ? `پلاک: ${plaque.trim()}` : '']
+      .filter(Boolean)
+      .join(' - ');
+
+    const res = await registerUser({
+      name: name.trim(),
+      phone: phone.trim(),
+      password,
+      address: combinedAddress || undefined,
+      postalCode: postalCode.trim() || undefined,
+    });
+
+    setLoading(false);
+    if (res.success) {
+      handleClose();
+    } else {
+      setError(res.error || 'خطا در ثبت‌نام کاربر');
+    }
+  };
+
+  // Quick fill admin credentials for testing
   const handleFillAdmin = () => {
-    setMode('login');
     setPhone('09334237673');
     setPassword('i1l3i8a5');
+    setExistingUserName('مدیریت آیلند باتری');
+    setStep('password');
     setError('');
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
-      {/* Backdrop */}
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-4 md:p-6 my-auto">
+      {/* Smooth backdrop fade */}
       <div
-        onClick={onClose}
-        className="fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity"
+        onClick={handleClose}
+        className={`fixed inset-0 bg-black/60 backdrop-blur-xs transition-opacity duration-300 ease-out ${
+          animateIn ? 'opacity-100' : 'opacity-0'
+        }`}
       />
 
-      {/* Modal Dialog */}
-      <div className="relative w-full max-w-md bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-150 dark:border-gray-800 overflow-hidden z-10 transition-all">
-        {/* Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-blue-900 to-sky-900 text-white flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <User className="w-5 h-5 text-sky-300" />
-            <h3 className="font-extrabold text-base sm:text-lg">
-              {mode === 'login' ? 'ورود به حساب کاربری' : 'ثبت‌نام کاربر جدید'}
-            </h3>
-          </div>
-          <button
-            onClick={onClose}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
-          >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Tab switch */}
-        <div className="flex border-b border-gray-150 dark:border-gray-800 bg-gray-50 dark:bg-gray-800 p-1">
-          <button
-            onClick={() => {
-              setMode('login');
-              setError('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-              mode === 'login'
-                ? 'bg-white dark:bg-gray-800 text-sky-700 dark:text-sky-400 shadow-xs'
-                : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-            }`}
-          >
-            ورود به حساب
-          </button>
-          <button
-            onClick={() => {
-              setMode('register');
-              setError('');
-            }}
-            className={`flex-1 py-2 text-xs font-bold rounded-xl transition-all cursor-pointer ${
-              mode === 'register'
-                ? 'bg-white dark:bg-gray-800 text-sky-700 dark:text-sky-400 shadow-xs'
-                : 'text-gray-500 hover:text-gray-800 dark:hover:text-gray-200'
-            }`}
-          >
-            عضویت در سایت
-          </button>
-        </div>
-
-        {/* Body */}
-        <div className="p-5 sm:p-6 space-y-4">
-          {/* Admin shortcut test helper button */}
-          <div className="p-2.5 bg-sky-50 dark:bg-sky-950/40 border border-sky-200 dark:border-sky-900 rounded-xl flex items-center justify-between gap-2">
-            <div className="flex items-center gap-2 text-xs text-sky-900 dark:text-sky-200">
-              <ShieldCheck className="w-4 h-4 text-sky-600 shrink-0" />
-              <span>ادمین آیلند باتری: ۰۹۳۳۴۲۳۷۶۷۳</span>
+      {/* Smooth Scale & Slide-up Modal Dialog */}
+      <div
+        className={`relative my-auto w-full max-w-md bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 z-10 max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden transition-all duration-300 ease-out transform ${
+          animateIn ? 'scale-100 opacity-100 translate-y-0' : 'scale-95 opacity-0 translate-y-4'
+        }`}
+      >
+        {/* Sleek Header */}
+        <div className="p-4 sm:p-5 bg-gradient-to-l from-slate-950 via-slate-900 to-sky-950 text-white flex items-center justify-between border-b border-sky-900/40 shrink-0">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-sky-500/20 text-sky-400 flex items-center justify-center border border-sky-400/30">
+              <User className="w-4 h-4" />
             </div>
-            <button
-              type="button"
-              onClick={handleFillAdmin}
-              className="px-2.5 py-1 text-[11px] font-bold bg-gradient-to-r from-sky-500 to-blue-600 hover:from-sky-600 hover:to-blue-700 text-white rounded-lg transition-all cursor-pointer shrink-0 shadow-xs"
-            >
-              تکمیل ادمین
-            </button>
+            <div>
+              <h3 className="font-extrabold text-sm sm:text-base">
+                {step === 'phone' && 'ورود یا عضویت'}
+                {step === 'password' && 'ورود به حساب کاربری'}
+                {step === 'register' && 'تکمیل عضویت در سایت'}
+              </h3>
+              <p className="text-[10px] text-sky-300/80">
+                مرجع تخصصی باتری و قطعات آیلند باتری
+              </p>
+            </div>
           </div>
+          <button
+            onClick={handleClose}
+            className="p-1.5 rounded-full text-slate-400 hover:text-white hover:bg-white/10 transition-colors cursor-pointer"
+            aria-label="بستن"
+          >
+            <X className="w-4 h-4" />
+          </button>
+        </div>
+
+        {/* Modal Body */}
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(85vh-5rem)] overscroll-contain flex-1">
+          {/* Quick Admin fill button for rapid testing */}
+          {step === 'phone' && (
+            <div className="p-2.5 bg-sky-50/70 dark:bg-sky-950/40 border border-sky-200/80 dark:border-sky-900/60 rounded-xl flex items-center justify-between gap-2">
+              <div className="flex items-center gap-2 text-xs text-sky-900 dark:text-sky-200">
+                <ShieldCheck className="w-4 h-4 text-sky-600 dark:text-sky-400 shrink-0" />
+                <span className="text-[11px] font-medium">شماره ادمین: ۰۹۳۳۴۲۳۷۶۷۳</span>
+              </div>
+              <button
+                type="button"
+                onClick={handleFillAdmin}
+                className="px-2.5 py-1 text-[10px] font-bold bg-sky-600 hover:bg-sky-700 text-white rounded-lg transition-all cursor-pointer shadow-2xs"
+              >
+                تکمیل سریع ادمین
+              </button>
+            </div>
+          )}
 
           {error && (
-            <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-800 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2">
-              <AlertCircle className="w-4 h-4 shrink-0" />
+            <div className="p-3 bg-rose-50 dark:bg-rose-950/50 border border-rose-200 dark:border-rose-900/60 rounded-xl text-xs text-rose-700 dark:text-rose-300 flex items-center gap-2 animate-fadeIn">
+              <AlertCircle className="w-4 h-4 shrink-0 text-rose-500" />
               <span>{error}</span>
             </div>
           )}
 
-          <form onSubmit={handleSubmit} className="space-y-3.5">
-            {mode === 'register' && (
+          {/* STEP 1: Phone input only + Blue "بعدی" button */}
+          {step === 'phone' && (
+            <form onSubmit={handlePhoneSubmit} className="space-y-4">
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  نام و نام خانوادگی *
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                  شماره موبایل خود را وارد کنید
+                </label>
+                <div className="relative">
+                  <input
+                    type="tel"
+                    required
+                    autoFocus
+                    value={phone}
+                    onChange={(e) => setPhone(e.target.value)}
+                    placeholder="۰۹۱۲۳۴۵۶۷۸۹"
+                    className="w-full pl-3 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all font-mono tracking-wider"
+                    dir="ltr"
+                  />
+                  <Phone className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                </div>
+                <span className="text-[10px] text-slate-400 mt-1 block">
+                  در صورت داشتن حساب، مستقیماً وارد می‌شوید و در غیر این صورت حساب جدید ساخته می‌شود.
+                </span>
+              </div>
+
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:brightness-105 active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <span>بعدی</span>
+                    <ArrowLeft className="w-4 h-4" />
+                  </>
+                )}
+              </button>
+            </form>
+          )}
+
+          {/* STEP 2A: Password only for existing user (No terms checkbox needed) */}
+          {step === 'password' && (
+            <form onSubmit={handlePasswordSubmit} className="space-y-4 animate-fadeIn">
+              <div className="p-3 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200/80 dark:border-slate-700 flex items-center justify-between">
+                <div>
+                  <span className="text-[11px] text-slate-400 block">شماره همراه وارد شده:</span>
+                  <span className="font-bold text-xs text-slate-800 dark:text-slate-100 font-mono" dir="ltr">
+                    {toPersianDigits(phone)}
+                  </span>
+                  {existingUserName && (
+                    <span className="text-[11px] font-bold text-sky-600 dark:text-sky-400 block mt-0.5">
+                      خوش آمدید، {existingUserName} عزیز
+                    </span>
+                  )}
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('phone');
+                    setError('');
+                  }}
+                  className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-bold underline cursor-pointer"
+                >
+                  ویرایش شماره
+                </button>
+              </div>
+
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1.5">
+                  رمز عبور حساب کاربری
+                </label>
+                <div className="relative">
+                  <input
+                    type="password"
+                    required
+                    autoFocus
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="••••••••"
+                    className="w-full pl-3 pr-10 py-2.5 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-sm outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all font-mono"
+                  />
+                  <Lock className="w-4 h-4 text-slate-400 absolute right-3 top-3 pointer-events-none" />
+                </div>
+              </div>
+
+              <div className="flex items-center gap-2">
+                <button
+                  type="submit"
+                  disabled={loading}
+                  className="flex-1 py-2.5 rounded-xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:brightness-105 active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer"
+                >
+                  {loading ? (
+                    <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                  ) : (
+                    <span>ورود به حساب کاربری</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          )}
+
+          {/* STEP 2B: New User Registration (Address & Postal Code are OPTIONAL) */}
+          {step === 'register' && (
+            <form onSubmit={handleRegisterSubmit} className="space-y-3.5 animate-fadeIn">
+              <div className="p-2.5 bg-sky-50/70 dark:bg-sky-950/40 rounded-xl border border-sky-200/80 dark:border-sky-900/60 flex items-center justify-between">
+                <div>
+                  <span className="text-[10px] text-slate-400 block">شماره موبایل:</span>
+                  <span className="font-bold text-xs text-sky-700 dark:text-sky-300 font-mono" dir="ltr">
+                    {toPersianDigits(phone)}
+                  </span>
+                </div>
+                <button
+                  type="button"
+                  onClick={() => {
+                    setStep('phone');
+                    setError('');
+                  }}
+                  className="text-[11px] text-sky-600 hover:text-sky-700 dark:text-sky-400 font-bold underline cursor-pointer"
+                >
+                  تغییر شماره
+                </button>
+              </div>
+
+              {/* Name (Required) */}
+              <div>
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                  نام و نام خانوادگی <span className="text-rose-500">*</span>
                 </label>
                 <div className="relative">
                   <input
                     type="text"
                     required
+                    autoFocus
                     value={name}
                     onChange={(e) => setName(e.target.value)}
-                    placeholder="مثال: علی رضایی"
-                    className="w-full px-3 py-2 pr-9 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20 transition-colors"
+                    placeholder="مثال: علی محمدی"
+                    className="w-full pl-3 pr-10 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all"
                   />
-                  <User className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
+                  <User className="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
                 </div>
               </div>
-            )}
 
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                شماره موبایل *
-              </label>
-              <div className="relative">
-                <input
-                  type="tel"
-                  required
-                  value={phone}
-                  onChange={(e) => setPhone(e.target.value)}
-                  placeholder="۰۹۱۲۳۴۵۶۷۸۹"
-                  dir="ltr"
-                  className="w-full px-3 py-2 pr-9 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20 text-left font-mono transition-colors"
-                />
-                <Phone className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                رمز عبور *
-              </label>
-              <div className="relative">
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="w-full px-3 py-2 pr-9 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20 transition-colors"
-                />
-                <Lock className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2" />
-              </div>
-            </div>
-
-            {mode === 'register' && (
+              {/* Password (Required) */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 dark:text-slate-300 mb-1">
-                  آدرس پیش‌فرض (اختیاری)
+                <label className="block text-xs font-bold text-slate-700 dark:text-slate-200 mb-1">
+                  تعیین رمز عبور <span className="text-rose-500">*</span>
                 </label>
-                <textarea
-                  rows={2}
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  placeholder="جهت ارسال سریع سفارشات بعدی..."
-                  className="w-full px-3 py-2 text-sm rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 outline-none focus:border-sky-500 dark:focus:border-sky-400 focus:ring-2 focus:ring-sky-500/20 transition-colors"
-                />
+                <div className="relative">
+                  <input
+                    type="password"
+                    required
+                    value={password}
+                    onChange={(e) => setPassword(e.target.value)}
+                    placeholder="حداقل ۴ کاراکتر"
+                    className="w-full pl-3 pr-10 py-2 bg-slate-50 dark:bg-slate-800 rounded-xl border border-slate-200 dark:border-slate-700 text-slate-900 dark:text-white text-xs outline-none focus:ring-2 focus:ring-sky-500 focus:border-sky-500 transition-all font-mono"
+                  />
+                  <Lock className="w-4 h-4 text-slate-400 absolute right-3 top-2.5 pointer-events-none" />
+                </div>
               </div>
-            )}
 
-            {/* Terms checkbox with explicit link */}
-            <div className="flex items-start gap-2 pt-1">
-              <input
-                type="checkbox"
-                id="loginTerms"
-                checked={agreeTerms}
-                onChange={(e) => setAgreeTerms(e.target.checked)}
-                className="mt-1 w-4 h-4 rounded text-sky-600 focus:ring-sky-500 cursor-pointer"
-              />
-              <label
-                htmlFor="loginTerms"
-                className="text-xs text-gray-600 dark:text-gray-400 select-none cursor-pointer"
-              >
-                <span>کلیه </span>
-                <button
-                  type="button"
-                  onClick={() => {
-                    onClose();
-                    navigateTo('terms');
-                  }}
-                  className="text-sky-600 dark:text-sky-400 font-bold underline inline-flex items-center gap-0.5"
-                >
-                  <span>قوانین و مقررات</span>
-                  <ExternalLink className="w-3 h-3 inline" />
-                </button>
-                <span> وب‌سایت را خوانده و می‌پذیرم.</span>
+              {/* Address & Postal Code Details (Always visible, optional at registration) */}
+              <div className="p-3 bg-slate-50 dark:bg-slate-800/60 rounded-xl border border-slate-200/80 dark:border-slate-700/80 space-y-2.5">
+                <div className="flex items-center gap-1.5 text-slate-700 dark:text-slate-200 font-bold text-xs pb-1 border-b border-slate-200/60 dark:border-slate-700/60">
+                  <MapPin className="w-3.5 h-3.5 text-sky-500" />
+                  <span>آدرس و کد پستی</span>
+                </div>
+
+                <div>
+                  <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
+                    آدرس دقیق پستی <span className="text-slate-400">(اختیاری)</span>
+                  </label>
+                  <input
+                    type="text"
+                    value={address}
+                    onChange={(e) => setAddress(e.target.value)}
+                    placeholder="شهر، خیابان، کوچه..."
+                    className="w-full px-3 py-1.5 bg-white dark:bg-slate-750 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-sky-500"
+                  />
+                </div>
+
+                <div className="grid grid-cols-2 gap-2">
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
+                      کد پستی ۱۰ رقمی <span className="text-slate-400">(اختیاری)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={postalCode}
+                      onChange={(e) => setPostalCode(e.target.value)}
+                      placeholder="۱۲۳۴۵۶۷۸۹۰"
+                      maxLength={10}
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-750 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-sky-500 font-mono"
+                      dir="ltr"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-[11px] font-medium text-slate-600 dark:text-slate-300 mb-1">
+                      پلاک و واحد <span className="text-slate-400">(اختیاری)</span>
+                    </label>
+                    <input
+                      type="text"
+                      value={plaque}
+                      onChange={(e) => setPlaque(e.target.value)}
+                      placeholder="پلاک ۱۲، واحد ۴"
+                      className="w-full px-3 py-1.5 bg-white dark:bg-slate-750 rounded-lg border border-slate-200 dark:border-slate-600 text-slate-900 dark:text-white text-xs outline-none focus:ring-1 focus:ring-sky-500"
+                    />
+                  </div>
+                </div>
+              </div>
+
+              {/* Terms Checkbox */}
+              <label className="flex items-start gap-2 cursor-pointer pt-1">
+                <input
+                  type="checkbox"
+                  checked={agreeTerms}
+                  onChange={(e) => setAgreeTerms(e.target.checked)}
+                  className="mt-0.5 rounded border-slate-300 text-sky-600 focus:ring-sky-500 cursor-pointer"
+                />
+                <span className="text-[11px] text-slate-600 dark:text-slate-300 leading-tight">
+                  <span className="text-sky-600 dark:text-sky-400 font-semibold">قوانین و مقررات</span> آیلند باتری را مطالعه نموده و می‌پذیرم.
+                </span>
               </label>
-            </div>
 
-            <button
-              type="submit"
-              disabled={loading}
-              className="w-full py-3 rounded-xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 text-white font-bold text-sm shadow-md hover:brightness-105 active:scale-98 transition-all cursor-pointer mt-2"
-            >
-              {loading
-                ? 'در حال پردازش...'
-                : mode === 'login'
-                ? 'ورود به حساب'
-                : 'تکمیل عضویت و ورود'}
-            </button>
-          </form>
+              <button
+                type="submit"
+                disabled={loading}
+                className="w-full py-2.5 rounded-xl bg-gradient-to-r from-sky-500 via-blue-600 to-indigo-600 hover:brightness-105 active:scale-98 text-white font-bold text-xs sm:text-sm flex items-center justify-center gap-2 shadow-md transition-all cursor-pointer mt-2"
+              >
+                {loading ? (
+                  <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+                ) : (
+                  <>
+                    <Check className="w-4 h-4" />
+                    <span>تکمیل عضویت و ورود</span>
+                  </>
+                )}
+              </button>
+            </form>
+          )}
         </div>
       </div>
     </div>

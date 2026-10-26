@@ -4,6 +4,7 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import {
   INITIAL_ADMIN_USER,
+  INITIAL_BRANDS,
   INITIAL_CATEGORIES,
   INITIAL_CUSTOMER_USER,
   INITIAL_PRODUCTS,
@@ -37,6 +38,7 @@ if (!fs.existsSync(DATA_DIR)) {
 interface DbSchema {
   products: any[];
   categories: any[];
+  brands: any[];
   users: any[];
   orders: any[];
   settings: any;
@@ -72,6 +74,22 @@ function getDatabase(): DbSchema {
           return p;
         });
       }
+      if (!parsed.brands || parsed.brands.length === 0) {
+        parsed.brands = INITIAL_BRANDS;
+        updated = true;
+      }
+      if (!parsed.settings) {
+        parsed.settings = INITIAL_SETTINGS;
+        updated = true;
+      }
+      if (!parsed.orders) {
+        parsed.orders = [];
+        updated = true;
+      }
+      if (!parsed.users || parsed.users.length === 0) {
+        parsed.users = [INITIAL_ADMIN_USER, INITIAL_CUSTOMER_USER];
+        updated = true;
+      }
       if (updated) {
         saveDatabase(parsed);
       }
@@ -85,6 +103,7 @@ function getDatabase(): DbSchema {
   const initialDb: DbSchema = {
     products: INITIAL_PRODUCTS,
     categories: INITIAL_CATEGORIES,
+    brands: INITIAL_BRANDS,
     users: [INITIAL_ADMIN_USER, INITIAL_CUSTOMER_USER],
     orders: [
       {
@@ -101,7 +120,7 @@ function getDatabase(): DbSchema {
             title: 'شارژر دیواری ۴۵ وات سامسونگ اصل ویتنام',
             price: 980000,
             quantity: 1,
-            image: INITIAL_PRODUCTS[1].image,
+            image: INITIAL_PRODUCTS[1]?.image || 'https://images.unsplash.com/photo-1583863788434-e58a36330cf0?w=300&q=80',
           },
         ],
         subtotal: 980000,
@@ -184,6 +203,48 @@ app.put('/api/categories/:id', (req: Request, res: Response) => {
 app.delete('/api/categories/:id', (req: Request, res: Response) => {
   const db = getDatabase();
   db.categories = db.categories.filter((c) => c.id !== req.params.id);
+  saveDatabase(db);
+  res.json({ success: true });
+});
+
+// Brands
+app.get('/api/brands', (req: Request, res: Response) => {
+  const db = getDatabase();
+  res.json(db.brands || INITIAL_BRANDS);
+});
+
+app.post('/api/brands', (req: Request, res: Response) => {
+  const db = getDatabase();
+  const newBrand = {
+    id: `br-${Date.now()}`,
+    name: req.body.name,
+    nameFa: req.body.nameFa || req.body.name,
+    slug: req.body.slug || `brand-${Date.now()}`,
+    icon: req.body.icon || 'tag',
+    logo: req.body.logo || '',
+    description: req.body.description || '',
+    isPopular: req.body.isPopular !== undefined ? req.body.isPopular : true,
+  };
+  if (!db.brands) db.brands = [...INITIAL_BRANDS];
+  db.brands.push(newBrand);
+  saveDatabase(db);
+  res.status(201).json(newBrand);
+});
+
+app.put('/api/brands/:id', (req: Request, res: Response) => {
+  const db = getDatabase();
+  if (!db.brands) db.brands = [...INITIAL_BRANDS];
+  const idx = db.brands.findIndex((b) => b.id === req.params.id);
+  if (idx === -1) return res.status(404).json({ error: 'برند پیدا نشد' });
+  db.brands[idx] = { ...db.brands[idx], ...req.body };
+  saveDatabase(db);
+  res.json(db.brands[idx]);
+});
+
+app.delete('/api/brands/:id', (req: Request, res: Response) => {
+  const db = getDatabase();
+  if (!db.brands) db.brands = [...INITIAL_BRANDS];
+  db.brands = db.brands.filter((b) => b.id !== req.params.id);
   saveDatabase(db);
   res.json({ success: true });
 });
@@ -282,6 +343,24 @@ app.post('/api/upload', (req: Request, res: Response) => {
   }
 });
 
+// Delete uploaded file (e.g. replaced brand logo or banner)
+app.post('/api/delete-file', (req: Request, res: Response) => {
+  try {
+    const { url } = req.body;
+    if (url && typeof url === 'string' && url.startsWith('/uploads/')) {
+      const filename = path.basename(url);
+      const filePath = path.join(UPLOADS_DIR, filename);
+      if (fs.existsSync(filePath)) {
+        fs.unlinkSync(filePath);
+      }
+    }
+    res.json({ success: true });
+  } catch (err: any) {
+    console.error('File deletion error:', err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
 // Torob Bot Crawler API Feed
 app.get(['/api/torob/products', '/torob.json'], (req: Request, res: Response) => {
   const db = getDatabase();
@@ -302,12 +381,45 @@ app.get('/api/orders', (req: Request, res: Response) => {
 app.post('/api/orders', (req: Request, res: Response) => {
   const db = getDatabase();
   const orderNumber = `PR-${Math.floor(100000 + Math.random() * 900000)}`;
+
+  // Server-side audit & calculation of items and totals
+  const items = Array.isArray(req.body.items) ? req.body.items : [];
+  let calculatedSubtotal = 0;
+
+  const auditedItems = items.map((item: any) => {
+    // If the product exists in db, verify price integrity
+    const matchedProduct = db.products.find((p) => p.id === item.productId);
+    let itemPrice = Number(item.price) || 0;
+    if (matchedProduct) {
+      if (item.variantId && matchedProduct.variants) {
+        const v = matchedProduct.variants.find((vr: any) => vr.id === item.variantId);
+        if (v) itemPrice = v.salePrice || v.price;
+      } else {
+        itemPrice = matchedProduct.salePrice || matchedProduct.price;
+      }
+    }
+    const quantity = Math.max(1, Number(item.quantity) || 1);
+    calculatedSubtotal += itemPrice * quantity;
+    return {
+      ...item,
+      price: itemPrice,
+      quantity,
+    };
+  });
+
+  const shippingFee = calculatedSubtotal >= 500000 ? 0 : 45000;
+  const totalAmount = calculatedSubtotal + shippingFee;
+
   const newOrder = {
+    ...req.body,
     id: `ord-${Date.now()}`,
     orderNumber,
+    items: auditedItems,
+    subtotal: calculatedSubtotal,
+    shippingFee,
+    totalAmount,
     createdAt: new Date().toISOString(),
-    status: 'pending',
-    ...req.body,
+    status: req.body.status || 'pending',
   };
   db.orders.unshift(newOrder);
   saveDatabase(db);
@@ -391,6 +503,13 @@ app.post('/api/auth/register', (req: Request, res: Response) => {
   saveDatabase(db);
   const { password: _, ...safeUser } = newUser;
   res.status(201).json({ user: safeUser, token: `mock-jwt-${newUser.id}` });
+});
+
+app.post('/api/auth/check-phone', (req: Request, res: Response) => {
+  const db = getDatabase();
+  const { phone } = req.body;
+  const user = db.users.find((u) => u.phone === phone);
+  res.json({ exists: Boolean(user), name: user ? user.name : null });
 });
 
 // --- SPA SERVER INTEGRATION ---

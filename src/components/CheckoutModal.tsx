@@ -135,7 +135,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-4 overflow-y-auto">
+    <div className="fixed inset-0 z-50 overflow-y-auto flex items-start sm:items-center justify-center p-3 sm:p-4 md:p-6 my-auto">
       {/* Backdrop */}
       <div
         onClick={onClose}
@@ -143,9 +143,9 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
       />
 
       {/* Modal Dialog */}
-      <div className="relative w-full max-w-xl bg-white dark:bg-gray-900 rounded-3xl shadow-2xl border border-gray-150 dark:border-gray-800 overflow-hidden z-10 transition-all">
+      <div className="relative my-auto w-full max-w-xl bg-white dark:bg-slate-900 rounded-3xl shadow-2xl border border-slate-200 dark:border-slate-800 z-10 max-h-[92vh] sm:max-h-[85vh] flex flex-col overflow-hidden transition-all">
         {/* Modal Header */}
-        <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-blue-900 to-sky-900 text-white flex items-center justify-between">
+        <div className="p-4 sm:p-5 bg-gradient-to-r from-slate-950 via-blue-900 to-sky-900 text-white flex items-center justify-between shrink-0">
           <div className="flex items-center gap-2">
             <CreditCard className="w-5 h-5 text-sky-300" />
             <h3 className="font-extrabold text-base sm:text-lg">
@@ -156,14 +156,14 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
           </div>
           <button
             onClick={onClose}
-            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors"
+            className="p-1.5 rounded-lg bg-white/10 hover:bg-white/20 text-white transition-colors cursor-pointer"
           >
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {/* Modal Body */}
-        <div className="p-5 sm:p-6 max-h-[80vh] overflow-y-auto">
+        <div className="p-4 sm:p-6 space-y-4 overflow-y-auto max-h-[calc(85vh-5rem)] overscroll-contain flex-1">
           {/* STEP 1: GUEST REGISTRATION & ADDRESS FORM */}
           {step === 'auth' && (
             <form onSubmit={handleGuestSubmit} className="space-y-4">
@@ -282,7 +282,7 @@ export function CheckoutModal({ isOpen, onClose }: CheckoutModalProps) {
                 </label>
               </div>
 
-              <div className="pt-4 flex items-center justify-between border-t border-slate-150 dark:border-slate-800">
+              <div className="pt-4 flex items-center justify-between border-t border-slate-200 dark:border-slate-800">
                 <div className="text-sm font-bold">
                   <span>مبلغ قابل پرداخت: </span>
                   <span className="text-sky-600 dark:text-sky-400 font-black">

@@ -453,7 +453,7 @@ export function UserProfileView() {
                 <div
                   key={order.id}
                   onClick={() => setSelectedOrder(order)}
-                  className="group relative p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-slate-50/70 dark:bg-slate-900/80 hover:bg-white dark:hover:bg-slate-900 hover:border-sky-400 dark:hover:border-sky-500 hover:shadow-md transition-all duration-200 cursor-pointer space-y-3"
+                  className="group relative p-4 sm:p-5 rounded-2xl border border-slate-200 dark:border-slate-700/80 bg-white dark:bg-slate-800/95 hover:border-sky-500 dark:hover:border-sky-400 hover:shadow-md transition-all duration-200 cursor-pointer space-y-3"
                 >
                   {/* Top row */}
                   <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
@@ -461,7 +461,7 @@ export function UserProfileView() {
                       <span className="font-extrabold text-slate-900 dark:text-white group-hover:text-sky-600 dark:group-hover:text-sky-400 text-sm sm:text-base transition-colors">
                         سفارش #{toPersianDigits(order.orderNumber)}
                       </span>
-                      <span className="text-slate-300 dark:text-slate-700">|</span>
+                      <span className="text-slate-300 dark:text-slate-600">|</span>
                       <span className="text-slate-500 dark:text-slate-400 font-medium text-xs">
                         {formatPersianDate(order.createdAt)}
                       </span>
@@ -470,24 +470,24 @@ export function UserProfileView() {
                   </div>
 
                   {/* Items summary */}
-                  <div className="space-y-2 py-1.5 border-y border-slate-150 dark:border-slate-800/80">
+                  <div className="space-y-2 py-2 border-y border-slate-200 dark:border-slate-700/60">
                     {order.items.map((item, idx) => (
                       <div key={idx} className="flex items-center justify-between text-xs">
-                        <span className="text-slate-700 dark:text-slate-200 font-medium truncate max-w-[70%]">
-                          <span className="text-slate-900 dark:text-slate-100 font-bold bg-slate-200/80 dark:bg-slate-800 px-2 py-0.5 rounded-md ml-1.5">
+                        <span className="text-slate-800 dark:text-slate-100 font-medium truncate max-w-[70%]">
+                          <span className="text-slate-900 dark:text-white font-black bg-slate-100 dark:bg-slate-700 px-2 py-0.5 rounded-md ml-1.5 border border-slate-200 dark:border-slate-600">
                             {toPersianDigits(item.quantity)}×
                           </span>
                           {item.title}
                           {item.variantName ? ` (${item.variantName})` : ''}
                         </span>
-                        <span className="font-bold text-slate-800 dark:text-slate-200">{formatToman(item.price * item.quantity)}</span>
+                        <span className="font-bold text-slate-900 dark:text-white">{formatToman(item.price * item.quantity)}</span>
                       </div>
                     ))}
                   </div>
 
                   {/* Bottom row */}
                   <div className="flex items-center justify-between text-xs font-bold pt-1">
-                    <div className="flex items-center gap-1.5 text-slate-500 dark:text-slate-400">
+                    <div className="flex items-center gap-1.5 text-slate-600 dark:text-slate-300">
                       <span>مجموع پرداختی:</span>
                       <span className="text-sky-600 dark:text-sky-400 font-black text-sm sm:text-base">
                         {formatToman(order.totalAmount)}

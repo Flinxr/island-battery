@@ -1,11 +1,13 @@
 import React, { useState } from 'react';
 import { StoreProvider, useStore } from './context/StoreContext';
 import { Header } from './components/Header';
+import { DesktopSidebar } from './components/DesktopSidebar';
 import { MobileDrawer } from './components/MobileDrawer';
 import { LoginModal } from './components/LoginModal';
 import { CheckoutModal } from './components/CheckoutModal';
 import { HeroBanner } from './components/HeroBanner';
 import { CategoriesCarousel } from './components/CategoriesCarousel';
+import { BrandCatalog } from './components/BrandCatalog';
 import { SpecialOfferBanner } from './components/SpecialOfferBanner';
 import { ProductCarousel } from './components/ProductCarousel';
 import { CartView } from './components/CartView';
@@ -36,7 +38,7 @@ function MainApp() {
         onOpenLogin={() => setLoginModalOpen(true)}
       />
 
-      {/* Mobile Drawer */}
+      {/* Mobile Drawer (Only for mobile/tablet screens when hamburger is clicked) */}
       <MobileDrawer
         isOpen={menuOpen}
         onClose={() => setMenuOpen(false)}
@@ -55,48 +57,57 @@ function MainApp() {
         onClose={() => setCheckoutModalOpen(false)}
       />
 
-      {/* Main Content Area */}
-      <main className="flex-1 w-full">
-        {activePage === 'home' && (
-          <div className="max-w-7xl mx-auto px-1.5 sm:px-3 py-3 sm:py-5">
-            {/* Top Hero Banner matching screenshot */}
-            <HeroBanner />
+      {/* Desktop Persistent Sidebar + Main Content Layout */}
+      <div className="flex-1 flex w-full">
+        {/* Persistent Right Sidebar for Desktop / Laptop */}
+        <DesktopSidebar onOpenLogin={() => setLoginModalOpen(true)} />
 
-            {/* Categories Carousel matching screenshot 145519 */}
-            <CategoriesCarousel />
+        {/* Main Content Area */}
+        <main className="flex-1 min-w-0 w-full overflow-x-hidden lg:mr-64 xl:mr-72">
+          {activePage === 'home' && (
+            <div className="max-w-7xl mx-auto px-1.5 sm:px-3 py-3 sm:py-5">
+              {/* Top Hero Banner */}
+              <HeroBanner />
 
-            {/* Special Offer Banner matching screenshot 145152 */}
-            <SpecialOfferBanner />
+              {/* Categories Carousel */}
+              <CategoriesCarousel />
 
-            {/* Recommended Products Carousel matching screenshot 145152 */}
-            <ProductCarousel
-              title="محصولات پیشنهادی"
-              products={recommendedProducts.length > 0 ? recommendedProducts : products.slice(0, 8)}
-            />
+              {/* Brands Catalog */}
+              <BrandCatalog />
 
-            {/* Special Deals Carousel */}
-            {specialProducts.length > 0 && (
+              {/* Special Offer Banner */}
+              <SpecialOfferBanner />
+
+              {/* Recommended Products Carousel */}
               <ProductCarousel
-                title="تخفیف‌های ویژه"
-                products={specialProducts}
+                title="محصولات پیشنهادی"
+                products={recommendedProducts.length > 0 ? recommendedProducts : products.slice(0, 8)}
               />
-            )}
-          </div>
-        )}
 
-        {activePage === 'shop' && <ShopView />}
-        {activePage === 'product-detail' && <ProductDetailView />}
-        {activePage === 'cart' && (
-          <CartView onProceedToCheckout={() => setCheckoutModalOpen(true)} />
-        )}
-        {activePage === 'profile' && <UserProfileView />}
-        {activePage === 'contact' && <ContactView />}
-        {activePage === 'terms' && <TermsView />}
-        {activePage === 'about' && <AboutView />}
-        {activePage === 'admin' && <AdminPanel />}
-      </main>
+              {/* Special Deals Carousel */}
+              {specialProducts.length > 0 && (
+                <ProductCarousel
+                  title="تخفیف‌های ویژه"
+                  products={specialProducts}
+                />
+              )}
+            </div>
+          )}
 
-      {/* Standardized Footer matching screenshot 145303 */}
+          {activePage === 'shop' && <ShopView />}
+          {activePage === 'product-detail' && <ProductDetailView />}
+          {activePage === 'cart' && (
+            <CartView onProceedToCheckout={() => setCheckoutModalOpen(true)} />
+          )}
+          {activePage === 'profile' && <UserProfileView />}
+          {activePage === 'contact' && <ContactView />}
+          {activePage === 'terms' && <TermsView />}
+          {activePage === 'about' && <AboutView />}
+          {activePage === 'admin' && <AdminPanel />}
+        </main>
+      </div>
+
+      {/* Standardized Footer */}
       <Footer />
     </div>
   );

@@ -44,6 +44,21 @@ export interface Product {
   updatedAt?: string;
 }
 
+export interface Brand {
+  id: string;
+  name: string; // e.g., 'Apple', 'Samsung', 'Xiaomi'
+  nameFa: string; // e.g., 'اپل / آیفون', 'سامسونگ'
+  englishName?: string;
+  logoUrl?: string;
+  slug: string;
+  icon?: string;
+  logo?: string;
+  description?: string;
+  isPopular?: boolean;
+}
+
+export type ThemePalette = 'sky' | 'purple' | 'rose' | 'emerald' | 'amber' | 'cyan' | 'ruby' | 'indigo';
+
 export interface Category {
   id: string;
   name: string;
@@ -150,4 +165,5 @@ export interface StoreSettings {
   zarinpalMerchantId: string;
   smsGatewayProvider: string;
   smsApiKey: string;
+  themePalette?: ThemePalette;
 }

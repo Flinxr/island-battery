@@ -1,16 +1,19 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
 import {
+  Brand,
   CartItem,
   Category,
   Order,
   OrderStatus,
   Product,
   StoreSettings,
+  ThemePalette,
   User,
   UserRole,
 } from '../types/store';
 import {
   INITIAL_ADMIN_USER,
+  INITIAL_BRANDS,
   INITIAL_CATEGORIES,
   INITIAL_CUSTOMER_USER,
   INITIAL_PRODUCTS,
@@ -33,15 +36,17 @@ export type AdminTab =
   | 'dashboard'
   | 'products'
   | 'categories'
+  | 'brands'
   | 'orders'
   | 'users'
-  | 'banners'
+  | 'theme'
   | 'contact'
   | 'torob';
 
 interface StoreContextType {
   products: Product[];
   categories: Category[];
+  brands: Brand[];
   cart: CartItem[];
   currentUser: User | null;
   orders: Order[];
@@ -52,13 +57,21 @@ interface StoreContextType {
   selectedProductId: string | null;
   selectedCategoryId: string | null;
   selectedSubcategoryId: string | null;
+  selectedBrandId: string | null;
   searchQuery: string;
   isDarkMode: boolean;
   isLoading: boolean;
   isSyncingCart: boolean;
   // Navigation
-  navigateTo: (page: ActivePage, productId?: string, categoryId?: string, subcategory?: string | null) => void;
+  navigateTo: (
+    page: ActivePage,
+    productId?: string,
+    categoryId?: string,
+    subcategory?: string | null,
+    brandId?: string | null
+  ) => void;
   setSelectedSubcategoryId: (sub: string | null) => void;
+  setSelectedBrandId: (brandId: string | null) => void;
   setSearchQuery: (query: string) => void;
   toggleDarkMode: () => void;
   // Cart
@@ -68,6 +81,7 @@ interface StoreContextType {
   clearCart: () => void;
   // Auth
   login: (phone: string, pass: string) => Promise<{ success: boolean; error?: string }>;
+  checkPhoneExists: (phone: string) => Promise<{ exists: boolean; name?: string }>;
   registerUser: (data: {
     name: string;
     phone: string;
@@ -82,6 +96,9 @@ interface StoreContextType {
   deleteProduct: (id: string) => Promise<boolean>;
   saveCategory: (category: Partial<Category>) => Promise<Category>;
   deleteCategory: (id: string) => Promise<boolean>;
+  saveBrand: (brand: Partial<Brand>) => Promise<Brand>;
+  deleteBrand: (id: string) => Promise<boolean>;
+  updateTheme: (palette: ThemePalette) => Promise<void>;
   createOrder: (orderData: Partial<Order>) => Promise<Order>;
   updateOrderStatus: (orderId: string, status: OrderStatus) => Promise<boolean>;
   updateUserRole: (userId: string, role: UserRole) => Promise<boolean>;
@@ -98,7 +115,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       const saved = localStorage.getItem('pr_products');
       if (saved) {
         const parsed: Product[] = JSON.parse(saved);
-        return parsed.map((p) => ({
+        // Exclude legacy mock products if present
+        const filtered = parsed.filter((p) => !['p1', 'p2', 'p3', 'p4', 'p5', 'p6', 'p7', 'p8'].includes(p.id));
+        return filtered.map((p) => ({
           ...p,
           brand: p.brand || p.attributes?.brand || 'آیلند باتری',
           subcategory: p.subcategory || undefined,
@@ -129,6 +148,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       return INITIAL_CATEGORIES;
     }
   });
+
+  const [brands, setBrands] = useState<Brand[]>(() => {
+    try {
+      const saved = localStorage.getItem('pr_brands');
+      if (saved) return JSON.parse(saved);
+      return INITIAL_BRANDS;
+    } catch {
+      return INITIAL_BRANDS;
+    }
+  });
+
+  const [selectedBrandId, setSelectedBrandId] = useState<string | null>(null);
 
   const [cart, setCart] = useState<CartItem[]>(() => {
     try {
@@ -205,6 +236,17 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     localStorage.setItem('pr_dark_mode', String(isDarkMode));
   }, [isDarkMode]);
 
+  // Apply theme palette to html element
+  useEffect(() => {
+    const palette = settings.themePalette || 'sky';
+    document.documentElement.setAttribute('data-theme', palette);
+  }, [settings.themePalette]);
+
+  // Save brands
+  useEffect(() => {
+    localStorage.setItem('pr_brands', JSON.stringify(brands));
+  }, [brands]);
+
   // Sync to backend on mount if server is available
   useEffect(() => {
     async function loadServerData() {
@@ -217,7 +259,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
         if (prodRes && prodRes.ok) {
           const prods = await prodRes.json();
-          if (Array.isArray(prods) && prods.length > 0) {
+          if (Array.isArray(prods)) {
             setProducts(prods);
             localStorage.setItem('pr_products', JSON.stringify(prods));
           }
@@ -234,6 +276,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
           if (sets && sets.storeName) {
             setSettings(sets);
             localStorage.setItem('pr_settings', JSON.stringify(sets));
+            if (sets.themePalette) {
+              document.documentElement.setAttribute('data-theme', sets.themePalette);
+            }
           }
         }
       } catch (err) {
@@ -241,12 +286,63 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       }
     }
     loadServerData();
+
+    // Real-time synchronization: Poll server so admin changes to theme and banners propagate immediately to all users
+    let isSubscribed = true;
+    async function syncLatestSettings() {
+      try {
+        const res = await fetch('/api/settings');
+        if (res.ok) {
+          const sets = await res.json();
+          if (sets && sets.storeName && isSubscribed) {
+            setSettings((prev) => {
+              const themeChanged = prev.themePalette !== sets.themePalette;
+              const bannerChanged =
+                prev.heroBanner?.title !== sets.heroBanner?.title ||
+                prev.heroBanner?.imageUrl !== sets.heroBanner?.imageUrl ||
+                prev.heroBanner?.subtitle !== sets.heroBanner?.subtitle;
+              const storeChanged = prev.storeName !== sets.storeName;
+
+              if (themeChanged || bannerChanged || storeChanged) {
+                if (sets.themePalette) {
+                  document.documentElement.setAttribute('data-theme', sets.themePalette);
+                }
+                localStorage.setItem('pr_settings', JSON.stringify(sets));
+                return sets;
+              }
+              return prev;
+            });
+          }
+        }
+      } catch {}
+    }
+
+    const intervalId = setInterval(syncLatestSettings, 2500);
+    window.addEventListener('focus', syncLatestSettings);
+    document.addEventListener('visibilitychange', syncLatestSettings);
+
+    return () => {
+      isSubscribed = false;
+      clearInterval(intervalId);
+      window.removeEventListener('focus', syncLatestSettings);
+      document.removeEventListener('visibilitychange', syncLatestSettings);
+    };
   }, []);
 
   // Save cart changes
   useEffect(() => {
     localStorage.setItem('pr_cart', JSON.stringify(cart));
   }, [cart]);
+
+  // Save products changes
+  useEffect(() => {
+    localStorage.setItem('pr_products', JSON.stringify(products));
+  }, [products]);
+
+  // Save categories changes
+  useEffect(() => {
+    localStorage.setItem('pr_categories', JSON.stringify(categories));
+  }, [categories]);
 
   // Save orders changes
   useEffect(() => {
@@ -270,13 +366,15 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     page: ActivePage,
     productId?: string,
     categoryId?: string,
-    subcategory?: string | null
+    subcategory?: string | null,
+    brandId?: string | null
   ) => {
     setActivePage(page);
     if (productId !== undefined) setSelectedProductId(productId);
     if (categoryId !== undefined) setSelectedCategoryId(categoryId);
     if (subcategory !== undefined) setSelectedSubcategoryId(subcategory);
     else if (categoryId !== undefined) setSelectedSubcategoryId(null);
+    if (brandId !== undefined) setSelectedBrandId(brandId);
     window.scrollTo({ top: 0, behavior: 'smooth' });
   };
 
@@ -398,6 +496,40 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       setIsLoading(false);
       return { success: false, error: 'خطا در برقراری ارتباط با سرور' };
     }
+  };
+
+  const checkPhoneExists = async (phone: string): Promise<{ exists: boolean; name?: string }> => {
+    if (phone === '09334237673') {
+      return { exists: true, name: 'مدیریت آیلند باتری' };
+    }
+    if (phone === INITIAL_CUSTOMER_USER.phone) {
+      return { exists: true, name: INITIAL_CUSTOMER_USER.name };
+    }
+    if (currentUser && currentUser.phone === phone) {
+      return { exists: true, name: currentUser.name };
+    }
+    try {
+      const res = await fetch('/api/auth/check-phone', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone }),
+      });
+      if (res.ok) {
+        const data = await res.json();
+        return data;
+      }
+    } catch {}
+
+    try {
+      const localUsers = localStorage.getItem('pr_all_users');
+      if (localUsers) {
+        const parsed: User[] = JSON.parse(localUsers);
+        const match = parsed.find((u) => u.phone === phone);
+        if (match) return { exists: true, name: match.name };
+      }
+    } catch {}
+
+    return { exists: false };
   };
 
   const registerUser = async (data: {
@@ -586,6 +718,51 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     return true;
   };
 
+  const saveBrand = async (brandData: Partial<Brand>): Promise<Brand> => {
+    const isEdit = Boolean(brandData.id && brands.some((b) => b.id === brandData.id));
+    const savedBrand: Brand = {
+      id: brandData.id || `br-${Date.now()}`,
+      name: brandData.name || 'Brand',
+      nameFa: brandData.nameFa || brandData.name || 'برند جدید',
+      slug: brandData.slug || `brand-${Date.now()}`,
+      icon: brandData.icon || 'tag',
+      logo: brandData.logo || '',
+      description: brandData.description || '',
+      isPopular: brandData.isPopular !== undefined ? brandData.isPopular : true,
+    };
+
+    try {
+      await fetch('/api/brands', {
+        method: isEdit ? 'PUT' : 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(savedBrand),
+      });
+    } catch {}
+
+    setBrands((prev) => {
+      const exists = prev.some((b) => b.id === savedBrand.id);
+      if (exists) {
+        return prev.map((b) => (b.id === savedBrand.id ? savedBrand : b));
+      }
+      return [...prev, savedBrand];
+    });
+
+    return savedBrand;
+  };
+
+  const deleteBrand = async (id: string): Promise<boolean> => {
+    try {
+      await fetch(`/api/brands/${id}`, { method: 'DELETE' });
+    } catch {}
+    setBrands((prev) => prev.filter((b) => b.id !== id));
+    return true;
+  };
+
+  const updateTheme = async (palette: ThemePalette): Promise<void> => {
+    await saveSettings({ themePalette: palette });
+    document.documentElement.setAttribute('data-theme', palette);
+  };
+
   const createOrder = async (orderData: Partial<Order>): Promise<Order> => {
     const orderNumber = `PR-${Math.floor(100000 + Math.random() * 900000)}`;
     const newOrder: Order = {
@@ -652,6 +829,12 @@ export function StoreProvider({ children }: { children: ReactNode }) {
 
   const saveSettings = async (newSettings: Partial<StoreSettings>): Promise<boolean> => {
     const updated = { ...settings, ...newSettings };
+    if (updated.themePalette) {
+      document.documentElement.setAttribute('data-theme', updated.themePalette);
+    }
+    setSettings(updated);
+    localStorage.setItem('pr_settings', JSON.stringify(updated));
+
     try {
       await fetch('/api/settings', {
         method: 'PUT',
@@ -660,7 +843,6 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       });
     } catch {}
 
-    setSettings(updated);
     return true;
   };
 
@@ -685,6 +867,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
       value={{
         products,
         categories,
+        brands,
         cart,
         currentUser,
         orders,
@@ -696,6 +879,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         selectedCategoryId,
         selectedSubcategoryId,
         setSelectedSubcategoryId,
+        selectedBrandId,
+        setSelectedBrandId,
         searchQuery,
         isDarkMode,
         isLoading,
@@ -708,6 +893,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         updateCartQuantity,
         clearCart,
         login,
+        checkPhoneExists,
         registerUser,
         logout,
         updateUserProfile,
@@ -715,6 +901,9 @@ export function StoreProvider({ children }: { children: ReactNode }) {
         deleteProduct,
         saveCategory,
         deleteCategory,
+        saveBrand,
+        deleteBrand,
+        updateTheme,
         createOrder,
         updateOrderStatus,
         updateUserRole,
